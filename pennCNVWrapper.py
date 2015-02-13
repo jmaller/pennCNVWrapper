@@ -4,9 +4,14 @@
         pennCNVWrapper.py --preprocess  -d <DATA> -o <BASE_OUTPUT> -n <NAME> [options]
         pennCNVWrapper.py --run -o <BASE_OUTPUT> -n <NAME> [options]
         pennCNVWrapper.py --postprocess -d <DATA> -i <RESULTS_BASE> -o <OUTPUT_PATH> -n <NAME> [options]
-        pennCNVWrapper.py --check -o <OUTPUT_PATH>
+        pennCNVWrapper.py --check -d <DATA> -o <OUTPUT_PATH>
+
+    Arguments:
+        -d <DATA>, --data <DATA>            Denotes the folder containing the gtc.txt files to use
+        -n <NAME>, --name <NAME>              Names the run of pennCNVWrapper
+
     Options:
-        -n NAME, --name=NAME                Names the run of pennCNVWrapper
+        --force                             Forces reconstruction of all files, even if they are present
 
 """
 import os
@@ -15,8 +20,33 @@ import subprocess
 
 from docopt import docopt
 
+def makeStructure(outputFolder):
+    # creates the intended output structure if it does not exist:
+    # in outputFolder:
+    #       logs
+    #       output
+    #       run1
+    #       scripts
+    #       signalFiles
+    toCheck = []
+    toCheck.append(outputFolder)
+    toCheck.append(outputFolder + "/logs")
+    toCheck.append(outputFolder + "/output")
+    toCheck.append(outputFolder + "/run1")
+    toCheck.append(outputFolder + "/scripts")
+    toCheck.append(outputFolder + "/signalfiles")
 
-def prepSignalFiles(dataFolder, outputFolder, force=False):
+    for folder in toCheck:
+        try:
+            if not os.path.isdir(folder):
+                os.mkdir(folder)
+        except OSError:
+            fatal("OSError with %s.  Check arguments and permissions" % folder)
+
+
+
+
+def prepSignalFiles(dataFolder, outputFolder, force):
     # CONVERT ILLUMINA FILES TO PENNCNV INPUT SIGNAL FILES
     gtcList = []
     try:
@@ -29,8 +59,6 @@ def prepSignalFiles(dataFolder, outputFolder, force=False):
 
     # Check if the signalfiles folder exists, or create if it doesn't
     signalPath = outputFolder + "/signalfiles"
-    if not os.path.isdir(signalPath):
-        os.mkdir(signalPath)
     logPath = signalPath + "/processLog.txt"
     logFile = open(logPath, 'w')
 
@@ -83,12 +111,29 @@ def fatal(errorMessage):
 
 
 
-def main():
+def main(args):
     # Deal with arguments, determine which run mode
-
 
     # Run mode 1: pre-run QC / file prep
     # Create directory structure
+    if args['--preprocess']:
+        data = args['-d']
+        output = args['-o']
+        # trim "/" off DATA and OUTPUT if included in argument
+        for string in [data, output]:
+            if string[-1] == "/":
+                string = string[:-1]
+
+        name = args['-n']
+
+        # step 1: generate signal files
+        prepSignalFiles(datafolder=data, outputFolder=output, force=args['--force'])
+    elif args['--run']:
+        pass
+    elif args['--postprocess']:
+        pass
+    elif args['--check']:
+        pass
     # Locate .gtc.txt files
     # Generate signal files
     # Sample-level signal file QC
@@ -114,5 +159,9 @@ def main():
 
 
 if __name__ == "__main__":
-    args = docopt(__doc__, version='0.1')
+    try:
+        args = docopt(__doc__, version='0.1')
+    except:
+        print __doc__
+        exit()
     main(args)
