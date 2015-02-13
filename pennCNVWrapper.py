@@ -8,17 +8,15 @@
 
     Arguments:
         -d <DATA>, --data <DATA>            Denotes the folder containing the gtc.txt files to use
-        -n <NAME>, --name <NAME>              Names the run of pennCNVWrapper
+        -n <NAME>, --name <NAME>            Names the run of pennCNVWrapper
 
     Options:
         --force                             Forces reconstruction of all files, even if they are present
 
 """
 import os
-import subprocess
-
-
 from docopt import docopt
+
 
 def makeStructure(outputFolder):
     # creates the intended output structure if it does not exist:
@@ -42,8 +40,6 @@ def makeStructure(outputFolder):
                 os.mkdir(folder)
         except OSError:
             fatal("OSError with %s.  Check arguments and permissions" % folder)
-
-
 
 
 def prepSignalFiles(dataFolder, outputFolder, force):
@@ -82,24 +78,31 @@ def prepSignalFiles(dataFolder, outputFolder, force):
     # done
     #find $dpath/signalfiles/ -iname '*.g
 
+
 def prepPFBFile():
     pass
 
+
 def prepGCFile():
     pass
+
 
 def preRunQC():
 
     pass
 
+
 def runPennCNV():
     pass
+
 
 def postRunQC():
     pass
 
+
 def postRunMerge():
     pass
+
 
 def postRunSummary():
     pass
@@ -115,19 +118,23 @@ def main(args):
     # Deal with arguments, determine which run mode
 
     # Run mode 1: pre-run QC / file prep
-    # Create directory structure
     if args['--preprocess']:
-        data = args['-d']
-        output = args['-o']
+
+        data = args['--data']
+        output = args['--output']
+        name = args['--name']
+
         # trim "/" off DATA and OUTPUT if included in argument
-        for string in [data, output]:
-            if string[-1] == "/":
-                string = string[:-1]
+        if data[-1] == "/":
+            data = data[:-1]
+        if output[-1] == "/":
+            output = output[:-1]
 
-        name = args['-n']
-
-        # step 1: generate signal files
+        # Step 1: Create directory structure
+        makeStructure(outputFolder=output)
+        # Step 2: generate signal files
         prepSignalFiles(datafolder=data, outputFolder=output, force=args['--force'])
+
     elif args['--run']:
         pass
     elif args['--postprocess']:
