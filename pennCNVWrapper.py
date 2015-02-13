@@ -17,8 +17,19 @@ from docopt import docopt
 
 
 def prepSignalFiles():
-    pass
+    ## CONVERT ILLUMINA FILES TO PENNCNV INPUT SIGNAL FILES
+    # echo "converting illumina files to penncnv format"
+    # for i in `cat $gtclist`
+    # do
+    #    bname=`basename $i .gtc.txt`
+    #    outfile=${base}/data/signalfiles/${i}.penncnv
+    #    rm $outfile
+    #    printf "%s\t%s\t%s\t%s\t%s\t%s\n" "Name" "Chr" "Position" "${bname}.GType"  "${bname}.Log R Ratio"  "${bname}.B Allele Freq" > $outfile
+    #    cat ${base}/data/wave1/$i | awk -v OFS='\t' 'NR>12 {print $1, $2, $3, $7 $8, $16, $15}' >>$outfile
 
+    # done
+
+    #find $dpath/signalfiles/ -iname '*.g
 
 def prepPFBFile():
     pass
@@ -73,6 +84,7 @@ def main():
     # plots and things as requested
 
     # Run mode 4: check run progress
+
     pass
 
 
