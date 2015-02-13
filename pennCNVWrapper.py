@@ -1,12 +1,12 @@
 """
     pennCNVWrapper.py
     Usage:
-        pennCNVWrapper.py [options]
-
+        pennCNVWrapper.py --preprocess  -d <DATA> -o <BASE_OUTPUT> -n <NAME> [options]
+        pennCNVWrapper.py --run -o <BASE_OUTPUT> -n <NAME> [options]
+        pennCNVWrapper.py --postprocess -d <DATA> -i <RESULTS_BASE> -o <OUTPUT_PATH> -n <NAME> [options]
+        pennCNVWrapper.py --check -o <OUTPUT_PATH>
     Options:
-        -d DATASET, --data=DATASET          Specify data to use.  Default is DBS wave 1 recluster
-        -s, --spread                        Plots an alternate style focusing on SNP cluster density
-        -c, --cnv                           Includes CNV definition information in the figure header
+        -n NAME, --name=NAME                Names the run of pennCNVWrapper
 
 """
 
@@ -48,6 +48,31 @@ def postRunSummary():
 
 
 def main():
+    # Deal with arguments, determine which run mode
+
+
+    # Run mode 1: pre-run QC / file prep
+    # Create directory structure
+    # Locate .gtc.txt files
+    # Generate signal files
+    # Sample-level signal file QC
+    # SNP-level signal file QC
+    # Generate PFB file
+    # Generate GC file
+
+    # Run mode 2: run PennCNV
+    # Pre-run checks
+    # Run PennCNV
+    # Create job array script and parameter set
+
+    # Run mode 3: post-run QC
+    # Internally run mode 4
+    # Output QC summary of raw calls
+    # Filter and merge
+    # Summarize merged / filtered dataset
+    # plots and things as requested
+
+    # Run mode 4: check run progress
     pass
 
 
