@@ -1,45 +1,49 @@
 """
     pennCNVWrapper.py
     Usage:
-        pennCNVWrapper.py --preprocess  -d <DATA> -o <BASE_OUTPUT> -n <NAME> [options]
-        pennCNVWrapper.py --run -o <BASE_OUTPUT> -n <NAME> [options]
-        pennCNVWrapper.py --postprocess -d <DATA> -i <RESULTS_BASE> -o <OUTPUT_PATH> -n <NAME> [options]
-        pennCNVWrapper.py --check -d <DATA> -o <OUTPUT_PATH>
+        pennCNVWrapper.py --preprocess  -d <DATA> -o <BASE_OUTPUT> -n <NAME> [-x <EXCLUDED>]    [options]
+        pennCNVWrapper.py --run                   -o <BASE_OUTPUT> -n <NAME>                    [options]
+        pennCNVWrapper.py --postprocess -d <DATA> -o <OUTPUT_PATH> -n <NAME>                    [options]
+        pennCNVWrapper.py --check       -d <DATA> -o <OUTPUT_PATH> -n <NAME>                    [options]
 
     Arguments:
-        -d <DATA>, --data <DATA>            Denotes the folder containing the gtc.txt files to use
-        -n <NAME>, --name <NAME>            Names the run of pennCNVWrapper
+        -d <DATA>, --data <DATA>                    Denotes the folder containing the gtc.txt files to use
+        -o <OUTPUT_PATH>, --output <OUTPUT_PATH>    Provides the folder base for PennCNVWrapper
+        -n <NAME>, --name <NAME>                    Names the run of pennCNVWrapper
+        -x <EXCLUDED>, --exclude <EXCLUDED>         Excludes the list of samples in this file
 
     Options:
-        --force                             Forces reconstruction of all files, even if they are present
+        --force                                     Forces reconstruction of all files, even if they are present
 
 """
 import os
 from docopt import docopt
+from types import *
 
+class projectDirectory:
+    """This class handles the setup and maintenance of the folder structure"""
+    def __init__(self, path):
+        # check type correctness
+        assert type(path) is StringType, "path is not a string"
 
-def makeStructure(outputFolder):
-    # creates the intended output structure if it does not exist:
-    # in outputFolder:
-    #       logs
-    #       output
-    #       run1
-    #       scripts
-    #       signalFiles
-    toCheck = []
-    toCheck.append(outputFolder)
-    toCheck.append(outputFolder + "/logs")
-    toCheck.append(outputFolder + "/output")
-    toCheck.append(outputFolder + "/run1")
-    toCheck.append(outputFolder + "/scripts")
-    toCheck.append(outputFolder + "/signalfiles")
+        # strip an ending '/' if applicable
+        if path[-1] == '/':
+            path = path[:-1]
 
-    for folder in toCheck:
-        try:
-            if not os.path.isdir(folder):
-                os.mkdir(folder)
-        except OSError:
-            fatal("OSError with %s.  Check arguments and permissions" % folder)
+        self.path = path
+        self.bsublogs = path + "/bsublogs"
+        self.logs = path + "/logs"
+        self.output = path + "/output"
+        self.scripts = path + "/scripts"
+        self.signalfiles = path + "/signalfiles"
+
+        # establish structure if it does not exist
+        for folder in [self.path, self.bsublogs, self.logs, self.output, self.scripts, self.signalfiles]:
+            try:
+                if not os.path.isdir(folder):
+                    os.mkdir(folder)
+            except OSError:
+                fatal("OSError with %s.  Check arguments and permissions" % folder)
 
 
 def prepSignalFiles(dataFolder, outputFolder, force):
@@ -116,7 +120,6 @@ def fatal(errorMessage):
 
 def main(args):
     # Deal with arguments, determine which run mode
-
     # Run mode 1: pre-run QC / file prep
     if args['--preprocess']:
 
