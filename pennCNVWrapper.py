@@ -21,6 +21,9 @@ import os
 from docopt import docopt
 from types import *
 from time import time
+from numpy import std
+from numpy import average
+from numpy import median
 
 
 class projectDirectory:
@@ -115,7 +118,48 @@ def prepGCFile():
     pass
 
 
+def prerun_sample_qc(directory, force=False):
+    """What to do with NaN-i-ness?"""
+    sample_folder = directory.signalfiles
+    signal_file_list = []
+    # populate signal_file_list with list of signal files
+    try:
+        for root, dirs, files in os.walk(sample_folder):
+            for file_name in files:
+                if file_name.endswith(".gtc.txt"):
+                    signal_file_list.append(os.path.join(root, file_name))
+    except OSError:
+        fatal("OS error in %s" % directory.signalfiles)
+
+    # iterate through the samples and extract QC parameters
+    for sample in signal_file_list:
+        # parse the 00000000_R00C00 format
+        sample_id = sample.split("/")[-1].split(".")[0]
+        sample_lrrs = []
+        sample_bafs = []
+        with open(sample, 'r') as f:
+            for count, line in enumerate(sample):
+                if count == 0:
+                    continue
+                line = line.split("\t")
+                lrr = line[3]
+                baf = line[4]
+                sample_lrrs.append(lrr)
+                sample_bafs.append(baf)
+        average_lrr = average(sample_lrrs)
+        std_lrr = std(sample_lrrs)
+        median_lrr = median(sample_lrrs)
+
+
+def prerun_snp_qc():
+    pass
+
+
 def preRunQC():
+    # Generate QC report for samples
+    # Generate QC report for SNPs
+    # record this stuff so you don't have to do it multiple times
+    # record samples and snps used and QC metrics
     pass
 
 
@@ -144,6 +188,12 @@ def fatal(errorMessage):
 def main(args):
     # Deal with arguments, determine which run mode
     # Run mode 1: pre-run QC / file prep
+    # Locate .gtc.txt files
+    # Generate signal files
+    # Sample-level signal file QC
+    # SNP-level signal file QC
+    # Generate PFB file
+    # Generate GC file
     if args['--preprocess']:
 
         data = args['--data']
@@ -168,12 +218,6 @@ def main(args):
         pass
     elif args['--check']:
         pass
-    # Locate .gtc.txt files
-    # Generate signal files
-    # Sample-level signal file QC
-    # SNP-level signal file QC
-    # Generate PFB file
-    # Generate GC file
 
     # Run mode 2: run PennCNV
     # Pre-run checks
@@ -188,8 +232,6 @@ def main(args):
     # plots and things as requested
 
     # Run mode 4: check run progress
-
-    pass
 
 
 if __name__ == "__main__":
