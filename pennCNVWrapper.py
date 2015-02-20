@@ -139,7 +139,7 @@ def prerun_sample_qc(directory, debug=False):
     qc_log.write("SAMPLE\tLRR_MEDIAN\tLRR_STD\tBAF_DRIFT\tPASS/FAIL\n")
     qc_list = open(sample_folder + "/qc_list.txt", 'w')
     if debug:
-        print "DEBUG: SAMPLE_ID          LRR_MED\tLRR_STD\tBAF_DFT\tQC"
+        print "DEBUG: SAMPLE_ID               LRR_MED\tLRR_STD\tBAF_DFT\tQC"
 
     # populate signal_file_list with list of signal files
     try:
@@ -151,7 +151,6 @@ def prerun_sample_qc(directory, debug=False):
         fatal("OS error in %s" % directory.signalfiles)
 
     # iterate through the samples and extract QC parameters
-
 
     for number, sample in enumerate(signal_file_list):
         # parse the 1234567890_R12C34 format
@@ -181,7 +180,11 @@ def prerun_sample_qc(directory, debug=False):
         qc_list.write("%s\tPASS\t" % sample_id)
         qc_log.write("%s\t%.3f\t%.3f\t%.3f\tPASS\n" % (sample_id, median_lrr, std_lrr, baf_drift))
         if debug:
-            print "DEBUG: %s  %.3f  \t%.3f  \t%.3f  \tPASS" % (sample_id, median_lrr, std_lrr, baf_drift)
+            if median_lrr > 0:
+                median_lrr = " %.3f" % median_lrr
+            else:
+                median_lrr = "%.3f" % median_lrr
+            print "DEBUG: %s       %s  \t%.3f  \t%.3f  \tPASS" % (sample_id, median_lrr, std_lrr, baf_drift)
 
         # # some stuff here to fail qc
         # qc_list.write("%s\tFAIL\t" % sample_id)
@@ -192,6 +195,8 @@ def prerun_sample_qc(directory, debug=False):
 
     qc_list.close()
     qc_log.close()
+
+
 def prerun_snp_qc():
     pass
 
