@@ -79,19 +79,26 @@ def prepSignalFiles(dataFolder, outputFolder, force=False, debug=False):
 
     logPath = signalPath + "/processLog.txt"
     logFile = open(logPath, 'w')
-    # if debug mode is not on, pipe standard out and standard error into processLog.txt
 
-    begin = time()
+    if debug:
+        begin = time()
+        print "DEBUG: ***** STARTING SIGNAL FILE PREP *****"
 
     # convert each gtc file
     for number, gtcFile in enumerate(gtcList):
         # Grab the sample ID from the file path
         sampleID = gtcFile.split("/")[-1].split(".")[0]
         samplePath = signalPath + "/" + sampleID + ".gtc.txt.penncnv"
-        if debug:
-            print "DEBUG: Sample %d: Parsing %s into %s" % (number, gtcFile, samplePath)
-        logFile.write("Sample %d: Parsing %s into %s" % (number, gtcFile, samplePath))
-        if not (os.path.isfile(samplePath) and force is False):
+
+        if force is False and os.path.isfile(samplePath):
+            logFile.write("Sample (%d): [ %s ] exists at [ %s ]\n" % (number + 1, sampleID, samplePath))
+            if debug:
+                print "DEBUG: Sample (%d): [ %s ] exists at [ %s ]" % (number + 1, sampleID, samplePath)
+        # else if force is true OR the file does not exist OR both
+        else:
+            logFile.write("Sample (%d): Parsing [ %s ] into [ %s ]\n" % (number + 1, gtcFile, samplePath))
+            if debug:
+                print "DEBUG: Sample (%d): Parsing [ %s ] into [ %s ]" % (number + 1, gtcFile, samplePath)
             toWrite = open(samplePath, 'w')
             toWrite.write("%s\t%s\t%s\t%s\t%s\n" % ("Name", "Chr", "Position", sampleID+".Log R Ratio", sampleID+".B Allele Freq"))
             # simultaneously do a thing
@@ -107,7 +114,7 @@ def prepSignalFiles(dataFolder, outputFolder, force=False, debug=False):
                     toWrite.write("%s\t%s\t%s\t%s\t%s\n" % (line[0], line[1], line[2], line[15], line[14]))
             toWrite.close()
     if debug:
-        print "DEBUG: Done, took %s seconds" % str(round(time() - begin, ndigits=2))
+        print "DEBUG: ***** SAMPLE PREP DONE, TOOK %s SECONDS *****" % str(round(time() - begin, ndigits=2))
 
 
 def prepPFBFile():
@@ -118,39 +125,73 @@ def prepGCFile():
     pass
 
 
-def prerun_sample_qc(directory, force=False):
+def prerun_sample_qc(directory, debug=False):
     """What to do with NaN-i-ness?"""
+
+    if debug:
+        begin = time()
+        print "DEBUG: ***** STARTING PRERUN SAMPLE QC *****"
+
     sample_folder = directory.signalfiles
     signal_file_list = []
+
+    qc_log = open(sample_folder + "/qc_log.txt", 'w')
+    qc_log.write("SAMPLE\tLRR_MEDIAN\tLRR_STD\tBAF_DRIFT\tPASS/FAIL\n")
+    qc_list = open(sample_folder + "/qc_list.txt", 'w')
+    if debug:
+        print "DEBUG: SAMPLE_ID          LRR_MED\tLRR_STD\tBAF_DFT\tQC"
+
     # populate signal_file_list with list of signal files
     try:
         for root, dirs, files in os.walk(sample_folder):
             for file_name in files:
-                if file_name.endswith(".gtc.txt"):
+                if file_name.endswith(".gtc.txt.penncnv"):
                     signal_file_list.append(os.path.join(root, file_name))
     except OSError:
         fatal("OS error in %s" % directory.signalfiles)
 
     # iterate through the samples and extract QC parameters
-    for sample in signal_file_list:
-        # parse the 00000000_R00C00 format
+
+
+    for number, sample in enumerate(signal_file_list):
+        # parse the 1234567890_R12C34 format
         sample_id = sample.split("/")[-1].split(".")[0]
         sample_lrrs = []
         sample_bafs = []
-        with open(sample, 'r') as f:
-            for count, line in enumerate(sample):
+        with open(sample, 'r') as sample_file:
+            for count, line in enumerate(sample_file):
                 if count == 0:
                     continue
                 line = line.split("\t")
-                lrr = line[3]
-                baf = line[4]
+                lrr = float(line[3])
+                baf = float(line[4])
                 sample_lrrs.append(lrr)
                 sample_bafs.append(baf)
         average_lrr = average(sample_lrrs)
         std_lrr = std(sample_lrrs)
         median_lrr = median(sample_lrrs)
+        baf_drift = 0
+        for baf in sample_bafs:
+            if .10 < baf < .375 or .625 < baf < .90:
+                baf_drift += 1
+        baf_drift /= float(count)
 
 
+        # some stuff here to pass qc
+        qc_list.write("%s\tPASS\t" % sample_id)
+        qc_log.write("%s\t%.3f\t%.3f\t%.3f\tPASS\n" % (sample_id, median_lrr, std_lrr, baf_drift))
+        if debug:
+            print "DEBUG: %s  %.3f  \t%.3f  \t%.3f  \tPASS" % (sample_id, median_lrr, std_lrr, baf_drift)
+
+        # # some stuff here to fail qc
+        # qc_list.write("%s\tFAIL\t" % sample_id)
+        # qc_log.write("%s\t%.3f\t%.3f\t%.3f\tFAIL\n" % (sample_id, median_lrr, std_lrr, baf_drift))
+        # if debug:
+        #     print "DEBUG: %s\t%.3f\t%.3f\t%.3f\tFAIL" % (sample_id, median_lrr, std_lrr, baf_drift)
+
+
+    qc_list.close()
+    qc_log.close()
 def prerun_snp_qc():
     pass
 
@@ -212,6 +253,7 @@ def main(args):
         # Step 2: generate signal files
         prepSignalFiles(dataFolder=data, outputFolder=dir.run_path, force=args['--force'], debug=args['--debug'])
 
+        prerun_sample_qc(directory=dir, debug=args['--debug'])
     elif args['--run']:
         pass
     elif args['--postprocess']:
