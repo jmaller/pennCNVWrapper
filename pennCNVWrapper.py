@@ -14,31 +14,45 @@
 
     Options:
         --force                                     Forces reconstruction of all files, even if they are present
+        --debug                                     Debug the bugs
 
 """
 import os
 from docopt import docopt
 from types import *
+from time import time
+
 
 class projectDirectory:
-    """This class handles the setup and maintenance of the folder structure"""
-    def __init__(self, path):
+    """This class handles the setup and maintenance of the folder structure
+    Structure:
+        [ Parent Folder] ---
+                            Run_Name_1 ---
+                                        bsublogs
+                                        logs
+                                        output
+                                        scripts
+                                        signalfiles
+                            Run_Name_2 --- ...                          """
+    def __init__(self, path, name):
         # check type correctness
         assert type(path) is StringType, "path is not a string"
+        assert os.path.isdir(path)
 
         # strip an ending '/' if applicable
         if path[-1] == '/':
             path = path[:-1]
 
         self.path = path
-        self.bsublogs = path + "/bsublogs"
-        self.logs = path + "/logs"
-        self.output = path + "/output"
-        self.scripts = path + "/scripts"
-        self.signalfiles = path + "/signalfiles"
+        self.run_path = path + "/" + name
+        self.bsublogs = self.run_path + "/bsublogs"
+        self.logs = self.run_path + "/logs"
+        self.output = self.run_path + "/output"
+        self.scripts = self.run_path + "/scripts"
+        self.signalfiles = self.run_path + "/signalfiles"
 
         # establish structure if it does not exist
-        for folder in [self.path, self.bsublogs, self.logs, self.output, self.scripts, self.signalfiles]:
+        for folder in [self.run_path, self.bsublogs, self.logs, self.output, self.scripts, self.signalfiles]:
             try:
                 if not os.path.isdir(folder):
                     os.mkdir(folder)
@@ -46,41 +60,51 @@ class projectDirectory:
                 fatal("OSError with %s.  Check arguments and permissions" % folder)
 
 
-def prepSignalFiles(dataFolder, outputFolder, force):
+def prepSignalFiles(dataFolder, outputFolder, force=False, debug=False):
     # CONVERT ILLUMINA FILES TO PENNCNV INPUT SIGNAL FILES
     gtcList = []
     try:
         for root, dirs, files in os.walk(dataFolder):
-            for file in files:
-                if file.endswith(".gtc.txt"):
-                    gtcList.append(os.path.join(root, file))
+            for filename in files:
+                if filename.endswith(".gtc.txt"):
+                    gtcList.append(os.path.join(root, filename))
     except OSError:
         fatal("file structure exception")
 
     # Check if the signalfiles folder exists, or create if it doesn't
     signalPath = outputFolder + "/signalfiles"
+
     logPath = signalPath + "/processLog.txt"
     logFile = open(logPath, 'w')
+    # if debug mode is not on, pipe standard out and standard error into processLog.txt
+
+    begin = time()
 
     # convert each gtc file
-    for gtcFile in gtcList:
+    for number, gtcFile in enumerate(gtcList):
         # Grab the sample ID from the file path
         sampleID = gtcFile.split("/")[-1].split(".")[0]
         samplePath = signalPath + "/" + sampleID + ".gtc.txt.penncnv"
+        if debug:
+            print "DEBUG: Sample %d: Parsing %s into %s" % (number, gtcFile, samplePath)
+        logFile.write("Sample %d: Parsing %s into %s" % (number, gtcFile, samplePath))
         if not (os.path.isfile(samplePath) and force is False):
             toWrite = open(samplePath, 'w')
             toWrite.write("%s\t%s\t%s\t%s\t%s\n" % ("Name", "Chr", "Position", sampleID+".Log R Ratio", sampleID+".B Allele Freq"))
-            os.system("awk -v OFS='\t' 'NR>12 {print $1, $2, $3, $16, $15}' " + gtcFile + " + >>" + samplePath)
+            # simultaneously do a thing
+            with open(gtcFile, 'r') as f:
+                for count, line in enumerate(f):
+                    if count < 12:
+                        continue
+                    line = line.split()
+                    # Round floats or not?  **** NOTICE **** PennCNV takes nans in the format "NaN", the first line
+                    #     will rewrite nans as "nan"
 
-
-    # do
-    #    bname=`basename $i .gtc.txt`
-    #    outfile=${base}/data/signalfiles/${i}.penncnv
-    #    rm $outfile
-    #    printf "%s\t%s\t%s\t%s\t%s\t%s\n" "Name" "Chr" "Position" "${bname}.GType"  "${bname}.Log R Ratio"  "${bname}.B Allele Freq" > $outfile
-    #    cat ${base}/data/wave1/$i | awk -v OFS='\t' 'NR>12 {print $1, $2, $3, $7 $8, $16, $15}' >>$outfile
-    # done
-    #find $dpath/signalfiles/ -iname '*.g
+                    # toWrite.write("%s\t%s\t%s\t%.04f\t%.04f\n" % (line[0], line[1], line[2], float(line[15]), float(line[14])))
+                    toWrite.write("%s\t%s\t%s\t%s\t%s\n" % (line[0], line[1], line[2], line[15], line[14]))
+            toWrite.close()
+    if debug:
+        print "DEBUG: Done, took %s seconds" % str(round(time() - begin, ndigits=2))
 
 
 def prepPFBFile():
@@ -92,7 +116,6 @@ def prepGCFile():
 
 
 def preRunQC():
-
     pass
 
 
@@ -134,9 +157,10 @@ def main(args):
             output = output[:-1]
 
         # Step 1: Create directory structure
-        makeStructure(outputFolder=output)
+        dir = projectDirectory(output, name)
+        # makeStructure(outputFolder=output)
         # Step 2: generate signal files
-        prepSignalFiles(datafolder=data, outputFolder=output, force=args['--force'])
+        prepSignalFiles(dataFolder=data, outputFolder=dir.run_path, force=args['--force'], debug=args['--debug'])
 
     elif args['--run']:
         pass
