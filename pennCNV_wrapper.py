@@ -141,7 +141,7 @@ def prerun_sample_qc(directory, debug=False):
     qc_log.write("SAMPLE\tLRR_MEDIAN\tLRR_STD\tBAF_DRIFT\tPASS/FAIL\n")
     qc_list = open(sample_folder + "/qc_list.txt", 'w')
     if debug:
-        print "DEBUG: SAMPLE_ID               LRR_MED\tLRR_STD\tBAF_DFT\tQC"
+        print "DEBUG: SAMPLE_ID            LRR_MED\tLRR_STD\tBAF_DFT\t QC"
 
     # populate signal_file_list with list of signal files
     try:
@@ -164,6 +164,7 @@ def prerun_sample_qc(directory, debug=False):
                 if count == 0:
                     continue
                 line = line.split("\t")
+
                 # don't do anything for X, Y, MT
                 if chromosome_as_int(line[1]) > 22:
                     continue
@@ -182,15 +183,18 @@ def prerun_sample_qc(directory, debug=False):
             if .20 < baf < .25 or .75 < baf < .8:
                 baf_drift += 1
         baf_drift /= float(count)
+
         # some stuff here to pass qc
         qc_list.write("%s\tPASS\t" % sample_id)
         qc_log.write("%s\t%.3f\t%.3f\t%.3f\tPASS\n" % (sample_id, median_lrr, std_lrr, baf_drift))
+
+        # DEBUG
         if debug:
             if median_lrr > 0:
                 median_lrr = " %.3f" % median_lrr
             else:
                 median_lrr = "%.3f" % median_lrr
-            print "DEBUG: %s       %s  \t%.3f  \t%.3f  \tPASS" % (sample_id, median_lrr, std_lrr, baf_drift)
+            print "DEBUG: %s    %s  \t%.3f  \t%.3f  \tPASS" % (sample_id, median_lrr, std_lrr, baf_drift)
 
         # # some stuff here to fail qc
         # qc_list.write("%s\tFAIL\t" % sample_id)
