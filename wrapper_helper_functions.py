@@ -10,6 +10,7 @@ def chromosome_as_int(chromosome):
     else:
         return int(chromosome)
 
+
 def fatal(errorMessage):
     print "ERROR: " + errorMessage
     exit()

@@ -109,7 +109,7 @@ def prep_signal_files(data_folder, output_folder, force=False, debug=False):
                     if count < 12:
                         continue
                     line = line.split()
-                    # Round floats or not?  **** NOTICE **** PennCNV takes nans in the format "NaN", the first line
+                    # Round floats or not?  NOTICE: PennCNV takes nans in the format "NaN", the first line
                     #     will rewrite nans as "nan"
 
                     # toWrite.write("%s\t%s\t%s\t%.04f\t%.04f\n" % (line[0], line[1], line[2], float(line[15]), float(line[14])))
@@ -141,7 +141,7 @@ def prerun_sample_qc(directory, debug=False):
     qc_log.write("SAMPLE\tLRR_MEDIAN\tLRR_STD\tBAF_DRIFT\tPASS/FAIL\n")
     qc_list = open(sample_folder + "/qc_list.txt", 'w')
     if debug:
-        print "DEBUG: SAMPLE_ID            LRR_MED\tLRR_STD\tBAF_DFT\t QC"
+        print "DEBUG: SAMPLE_ID             LRR_MED\tLRR_STD\tBAF_DFT\t QC"
 
     # populate signal_file_list with list of signal files
     try:
@@ -185,7 +185,7 @@ def prerun_sample_qc(directory, debug=False):
         baf_drift /= float(count)
 
         # some stuff here to pass qc
-        qc_list.write("%s\tPASS\t" % sample_id)
+        qc_list.write("%s\tPASS\n" % sample_id)
         qc_log.write("%s\t%.3f\t%.3f\t%.3f\tPASS\n" % (sample_id, median_lrr, std_lrr, baf_drift))
 
         # DEBUG
@@ -194,7 +194,7 @@ def prerun_sample_qc(directory, debug=False):
                 median_lrr = " %.3f" % median_lrr
             else:
                 median_lrr = "%.3f" % median_lrr
-            print "DEBUG: %s    %s  \t%.3f  \t%.3f  \tPASS" % (sample_id, median_lrr, std_lrr, baf_drift)
+            print "DEBUG: %s     %s  \t%.3f  \t%.3f  \tPASS" % (sample_id, median_lrr, std_lrr, baf_drift)
 
         # # some stuff here to fail qc
         # qc_list.write("%s\tFAIL\t" % sample_id)
