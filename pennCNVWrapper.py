@@ -21,9 +21,11 @@ import os
 from docopt import docopt
 from types import *
 from time import time
+import numpy as np
 from numpy import std
 from numpy import average
 from numpy import median
+from wrapper_helper_functions import *
 
 
 class projectDirectory:
@@ -63,11 +65,11 @@ class projectDirectory:
                 fatal("OSError with %s.  Check arguments and permissions" % folder)
 
 
-def prepSignalFiles(dataFolder, outputFolder, force=False, debug=False):
+def prep_signal_files(data_folder, output_folder, force=False, debug=False):
     # CONVERT ILLUMINA FILES TO PENNCNV INPUT SIGNAL FILES
     gtcList = []
     try:
-        for root, dirs, files in os.walk(dataFolder):
+        for root, dirs, files in os.walk(data_folder):
             for filename in files:
                 if filename.endswith(".gtc.txt"):
                     gtcList.append(os.path.join(root, filename))
@@ -75,7 +77,7 @@ def prepSignalFiles(dataFolder, outputFolder, force=False, debug=False):
         fatal("file structure exception")
 
     # Check if the signalfiles folder exists, or create if it doesn't
-    signalPath = outputFolder + "/signalfiles"
+    signalPath = output_folder + "/signalfiles"
 
     logPath = signalPath + "/processLog.txt"
     logFile = open(logPath, 'w')
@@ -162,20 +164,24 @@ def prerun_sample_qc(directory, debug=False):
                 if count == 0:
                     continue
                 line = line.split("\t")
+                # don't do anything for X, Y, MT
+                if chromosome_as_int(line[1]) > 22:
+                    continue
+
                 lrr = float(line[3])
                 baf = float(line[4])
-                sample_lrrs.append(lrr)
                 sample_bafs.append(baf)
-        average_lrr = average(sample_lrrs)
+                if not np.isnan(lrr):
+                    sample_lrrs.append(lrr)
+
+        # average_lrr = average(sample_lrrs)
         std_lrr = std(sample_lrrs)
         median_lrr = median(sample_lrrs)
         baf_drift = 0
         for baf in sample_bafs:
-            if .10 < baf < .375 or .625 < baf < .90:
+            if .20 < baf < .25 or .75 < baf < .8:
                 baf_drift += 1
         baf_drift /= float(count)
-
-
         # some stuff here to pass qc
         qc_list.write("%s\tPASS\t" % sample_id)
         qc_log.write("%s\t%.3f\t%.3f\t%.3f\tPASS\n" % (sample_id, median_lrr, std_lrr, baf_drift))
@@ -195,6 +201,7 @@ def prerun_sample_qc(directory, debug=False):
 
     qc_list.close()
     qc_log.close()
+    print "DEBUG: ***** PRERUN SAMPLE QC DONE, TOOK %s SECONDS *****" % str(round(time() - begin, ndigits=2))
 
 
 def prerun_snp_qc():
@@ -225,12 +232,6 @@ def postRunSummary():
     pass
 
 
-def fatal(errorMessage):
-    print "ERROR: " + errorMessage
-    exit()
-
-
-
 def main(args):
     # Deal with arguments, determine which run mode
     # Run mode 1: pre-run QC / file prep
@@ -256,7 +257,7 @@ def main(args):
         dir = projectDirectory(output, name)
         # makeStructure(outputFolder=output)
         # Step 2: generate signal files
-        prepSignalFiles(dataFolder=data, outputFolder=dir.run_path, force=args['--force'], debug=args['--debug'])
+        prep_signal_files(data_folder=data, output_folder=dir.run_path, force=args['--force'], debug=args['--debug'])
 
         prerun_sample_qc(directory=dir, debug=args['--debug'])
     elif args['--run']:
