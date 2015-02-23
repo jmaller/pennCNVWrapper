@@ -1,10 +1,10 @@
 """
-    pennCNVWrapper.py
+    pennCNV_wrapper.py
     Usage:
-        pennCNVWrapper.py --preprocess  -d <DATA> -o <BASE_OUTPUT> -n <NAME> [-x <EXCLUDED>]    [options]
-        pennCNVWrapper.py --run                   -o <BASE_OUTPUT> -n <NAME>                    [options]
-        pennCNVWrapper.py --postprocess -d <DATA> -o <OUTPUT_PATH> -n <NAME>                    [options]
-        pennCNVWrapper.py --check       -d <DATA> -o <OUTPUT_PATH> -n <NAME>                    [options]
+        pennCNV_wrapper.py --preprocess  -d <DATA> -o <BASE_OUTPUT> -n <NAME> [-x <EXCLUDED>]    [options]
+        pennCNV_wrapper.py --run                   -o <BASE_OUTPUT> -n <NAME>                    [options]
+        pennCNV_wrapper.py --postprocess -d <DATA> -o <OUTPUT_PATH> -n <NAME>                    [options]
+        pennCNV_wrapper.py --check       -d <DATA> -o <OUTPUT_PATH> -n <NAME>                    [options]
 
     Arguments:
         -d <DATA>, --data <DATA>                    Denotes the folder containing the gtc.txt files to use
